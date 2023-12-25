@@ -1,22 +1,85 @@
 import  requests, json
+from dataclasses import dataclass, field
+from typing import Optional, List
 
 API_URL = 'http://api.aviationstack.com/v1/flights'
 
 ACCESS_KEY = 'bc3afa47496ff14131de64609f8a5d07'
 
+@dataclass
+class Departure:
+    airport: str
+    timezone: str
+    iata: str
+    icao: str
+    terminal: Optional[None]
+    gate: Optional[None]
+    delay: Optional[None]
+    scheduled: str
+    estimated: str
+    actual: Optional[None]
+    estimated_runway: Optional[None]
+    actual_runway: Optional[None]
 
-ICAO = 'OBBI' # Bahrain airpot code
+@dataclass
+class Arrival:
+    airport: str
+    timezone: str
+    iata: str
+    icao: str
+    terminal: Optional[None]
+    gate: Optional[None]
+    baggage: Optional[None]
+    delay: Optional[None]
+    scheduled: str
+    estimated: str
+    actual: Optional[None]
+    estimated_runway: Optional[None]
+    actual_runway: Optional[None]
+
+@dataclass
+class Airline:
+    name: str
+    iata: str
+    icao: str
+
+@dataclass
+class Flight:
+    number: str
+    iata: str
+    icao: str
+    codeshared: Optional[None]
+
+@dataclass
+class FlightData:
+    flight_date: str
+    flight_status: str
+    departure: Departure
+    arrival: Arrival
+    airline: Airline
+    flight: Flight
+    aircraft: Optional[None] = None
+    live: Optional[None] = None
 
 
-params = {
-    'access_key': ACCESS_KEY,
-    'arr_icao': ICAO
-}
 
-flights = requests.get(API_URL, params)
-# print(flights.text)
 
-flights_json = flights.json()
+class APIManager:
+    @staticmethod
+    def fetchFlights(arr_icao: str) -> None:
+        params = {
+            'access_key': ACCESS_KEY,
+            'arr_icao': arr_icao
+        }
+        flightsRaw = requests.get(API_URL, params)
+        if flightsRaw.status_code != 200:
+            return None
+        
+        fligtsJson = flightsRaw.json()
+        with open('GB11.json', 'w') as file:
+            file.write(json.dumps(fligtsJson['data']))  
 
-with open('flights.json', 'w') as file:
-    file.write(json.dumps(flights_json))
+        flights_arr = List[FlightData]
+        for flight in fligtsJson['data']:
+            flights_arr.append(FlightData(**flight))
+        return flights_arr
