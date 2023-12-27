@@ -22,9 +22,11 @@ class Client:
     def write(self, msg: str) -> None:
         self.client_socket.send(msg.encode('utf-8'))
 
-    def get_name(self) -> None:
-        self.write('')
+    def get_name(self) -> str:
+        self.write('READ-Enter Your Name: ')
         n = self.read()
+        self.name = n
+        return n
         
 
 
@@ -56,7 +58,7 @@ class FlightsServer:
     # This will handle the client connect until it disconnects
     @classmethod
     def handle_client(self, c: Client) -> None:
-        data = c.read()
+        data = c.get_name()
         print(f'Recieved "{data}" from {c.client_address}')
 
 
