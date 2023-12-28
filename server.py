@@ -8,10 +8,10 @@ class Client:
     name: str # the client name
     client_socket: socket.socket
     client_address: Tuple
+    thread: threading.Thread
 
     def __init__(self, sock: socket.socket, addr) -> None:
         # self is same as this in java
-        self.name = "malak"
         self.client_address = addr
         self.client_socket = sock
 
@@ -20,13 +20,39 @@ class Client:
         return response.decode('utf-8')
 
     def write(self, msg: str) -> None:
-        self.client_socket.send(msg.encode('utf-8'))
+        try:
+            self.client_socket.send(msg.encode('utf-8'))
+        except:
+            # Client Disconnected
+            print(f'{self.name} Disconnected')
+            raise ConnectionError
 
     def get_name(self) -> str:
         self.write('READ-Enter Your Name: ')
         n = self.read()
         self.name = n
-        return n
+        return self.name
+    
+    def write_options(self) -> None:
+        msg = 'READ-'
+        msg += '1. Arrived flights\n2. Delayed flights\n3. All flights for a Country\n4. Details of Flight\n'
+        msg += 'Select an Option(1-4): '
+
+        self.write(msg)
+        resp = self.read()
+
+        if not resp.isdigit():
+            self.write('WRITE-Invalid Option')
+            self.write_options()
+            return
+
+        option = int(resp)
+        if option < 1 or option > 4:
+            self.write('WRITE-Invalid Option')
+            self.write_options()
+            return
+
+        print(f'CorrecT! Selected {option}')
         
 
 
@@ -51,15 +77,26 @@ class FlightsServer:
 
             # Put connection on Separate thread
             client_thread = threading.Thread(target=self.handle_client, args=(c,))
+            c.thread = client_thread
             # Start Thread
-            client_thread.start()
+            c.thread.start()
 
+
+    def logClient(self, c: Client) -> None:
+        print(f'{c.name} Connected')
 
     # This will handle the client connect until it disconnects
-    @classmethod
     def handle_client(self, c: Client) -> None:
-        data = c.get_name()
-        print(f'Recieved "{data}" from {c.client_address}')
+        c.get_name()
+        self.logClient(c)
+
+        try:
+            while True:
+                c.write_options()
+        except:
+            c.thread.join()
+
+    
 
 
 icao = input('Enter ICAO Code: ')

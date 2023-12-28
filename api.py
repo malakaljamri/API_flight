@@ -1,5 +1,5 @@
-import  requests, json, logging
-from dataclasses import dataclass, field
+import  requests, json
+from dataclasses import dataclass
 from typing import Optional, List
 
 API_URL = 'http://api.aviationstack.com/v1/flights'
@@ -73,16 +73,19 @@ class APIManager:
             'arr_icao': arr_icao,
             'limit': 100
         }
-        flightsRaw = requests.get(API_URL, params)
-        if flightsRaw.status_code != 200:
-            return None
-        
-        fligtsJson = flightsRaw.json()
-        with open('GB11.json', 'w') as file:
-            file.write(json.dumps(fligtsJson['data']))  
-
+        # flightsRaw = requests.get(API_URL, params)
+        # if flightsRaw.status_code != 200:
+        #     print(flightsRaw.text)
+        #     return None
+        fligtsJson = ''
+        with open('GB11.json', 'r') as file:
+            fligtsJson = json.load(file)
+        # fligtsJson = flightsRaw.json()
+        # with open('GB11.json', 'w') as file:
+        #     file.write(json.dumps(fligtsJson['data']))  
         flights_arr: List[FlightData] = []
-        for flight in fligtsJson['data']:
+        # for flight in fligtsJson['data']:
+        for flight in fligtsJson:
             flights_arr.append(FlightData(**flight))
         print('Fetched Flights')
         return flights_arr
