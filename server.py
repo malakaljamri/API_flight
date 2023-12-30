@@ -1,110 +1,104 @@
-import socket, threading
-from api import APIManager, FlightData
-from typing import List, Tuple
+import socket
+import threading
+import api
 
-SERVER_ADDRESS = ('127.0.0.1', 4999)
+flightsAPIManager: api.APIManager = None
 
-class Client:
-    name: str # the client name
-    client_socket: socket.socket
-    client_address: Tuple
-    thread: threading.Thread
+class ClientHandler(threading.Thread):
+    clientName: str = None
+    def __init__(self, client_socket, address):
+        super().__init__()
+        self.client_socket = client_socket
+        self.address = address
 
-    def __init__(self, sock: socket.socket, addr) -> None:
-        # self is same as this in java
-        self.client_address = addr
-        self.client_socket = sock
-
-    def read(self) -> str:
-        response = self.client_socket.recv(1024)
-        return response.decode('utf-8')
-
-    def write(self, msg: str) -> None:
-        try:
-            self.client_socket.send(msg.encode('utf-8'))
-        except:
-            # Client Disconnected
-            print(f'{self.name} Disconnected')
-            raise ConnectionError
-
-    def get_name(self) -> str:
-        self.write('READ-Enter Your Name: ')
-        n = self.read()
-        self.name = n
-        return self.name
-    
-    def write_options(self) -> None:
-        msg = 'READ-'
-        msg += '1. Arrived flights\n2. Delayed flights\n3. All flights for a Country\n4. Details of Flight\n'
-        msg += 'Select an Option(1-4): '
-
-        self.write(msg)
-        resp = self.read()
-
-        if not resp.isdigit():
-            self.write('WRITE-Invalid Option')
-            self.write_options()
-            return
-
-        option = int(resp)
-        if option < 1 or option > 4:
-            self.write('WRITE-Invalid Option')
-            self.write_options()
-            return
-
-        print(f'CorrecT! Selected {option}')
-        
-
-
-class FlightsServer:
-    flights: List[FlightData]
-    server_socket: socket.socket
-
-    def __init__(self, flights: List[FlightData]) -> None:
-        self.flights = flights
-        with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as ss:
-            ss.bind(SERVER_ADDRESS)
-            ss.listen(10) # max conns = 10
-            self.server_socket = ss
-
-            self.listen()
-    
-    def listen(self) -> None:
-        print(f'Server listening on {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}')
+    def run(self):
         while True:
-            client_socket, client_address = self.server_socket.accept()
-            c = Client(client_socket, client_address)
+            try:
+                if self.clientName == None:
+                    self.client_socket.sendall("Enter your name: ".encode())
+                    data = self.client_socket.recv(1024).decode().strip()
+                    if not data:
+                        break
+                    self.clientName = data
+                    print(f"{self.clientName} Connected")
+                    continue
+                
+                self.client_socket.sendall("1. Arrived flights\n2. Delayed flights\n3. All flights for a Country\n4. Details of Flight\nSelect an Option ('exit' to disconnect): ".encode())
+                
+                data = self.client_socket.recv(1024).decode().strip()
+                if not data:
+                    break
 
-            # Put connection on Separate thread
-            client_thread = threading.Thread(target=self.handle_client, args=(c,))
-            c.thread = client_thread
-            # Start Thread
-            c.thread.start()
+                if not data.isdigit():
+                    continue
+                
+                option = int(data)
+                if option == 1:
+                    print(f'{self.clientName} Requested all arrived flights')
+                    self.client_socket.sendall(flightsAPIManager.all_arrived().encode())
+                elif option == 2:
+                    print(f'{self.clientName} Requested all delayed flights')
+                    self.client_socket.sendall(flightsAPIManager.all_delayed().encode())
+                elif option == 3:
+                    self.client_socket.sendall('Enter Airport ICAO Code: '.encode())
+                    code = self.client_socket.recv(1024).decode().strip()
+                    if not code:
+                        break
+
+                    print(f'{self.clientName} Requested all flights from {code} Airport')
+                    self.client_socket.sendall(flightsAPIManager.all_for(code).encode())
+                elif option == 4:
+                    self.client_socket.sendall('Enter Flight ICAO Code: '.encode())
+                    code = self.client_socket.recv(1024).decode().strip()
+                    if not code:
+                        break
+
+                    print(f'{self.clientName} Requested all info for Flight {code}')
+                    self.client_socket.sendall(flightsAPIManager.info_for(code).encode())
 
 
-    def logClient(self, c: Client) -> None:
-        print(f'{c.name} Connected')
+            except Exception as e:
+                print(f"Error: {e}")
+                break
 
-    # This will handle the client connect until it disconnects
-    def handle_client(self, c: Client) -> None:
-        c.get_name()
-        self.logClient(c)
+        if self.clientName != None:
+            print(f"{self.clientName} just disconnected")
+        self.client_socket.close()
+
+class Server:
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.server_socket = None
+
+    def start(self):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(10)
+        print(f"Server listening on {self.host}:{self.port}")
 
         try:
             while True:
-                c.write_options()
-        except:
-            c.thread.join()
+                client_socket, address = self.server_socket.accept()
+                client_handler = ClientHandler(client_socket, address)
+                client_handler.start()
 
-    
+        except KeyboardInterrupt:
+            print("Server shutting down.")
+        finally:
+            if self.server_socket:
+                self.server_socket.close()
 
+if __name__ == "__main__":
+    HOST = '127.0.0.1'  # localhost
+    PORT = 4999
 
-icao = input('Enter ICAO Code: ')
+    icao = input('Enter ICAO Code: ')
+    flightsAPIManager = api.APIManager(icao)
 
-f = APIManager.fetchFlights(icao)
+    if len(flightsAPIManager.flights) == 0:
+        print('An Error Happened while Fetching from the API')
+        exit(1)
 
-if f == None:
-    print("An Error Happened While Fetching")
-    exit(1)
-
-server = FlightsServer(f)
+    server = Server(HOST, PORT)
+    server.start()
