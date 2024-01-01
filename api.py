@@ -63,7 +63,6 @@ class FlightData:
 
 
 
-
 class APIManager:
     flights: List[FlightData] = []
 
@@ -79,7 +78,7 @@ class APIManager:
             print(flightsRaw.text)
             return None
         
-        # to load locally
+        # # to load locally
         # fligtsJson = ''
         # with open('GB11.json', 'r') as file:
         #     fligtsJson = json.load(file)

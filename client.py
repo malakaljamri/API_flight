@@ -26,8 +26,10 @@ class TCPClient:
                 # Send user input back to the server
                 self.client_socket.sendall(user_input.encode())
 
-                if user_input.lower() == 'exit':
+                if user_input.lower() == 'Quit':
                     break
+        except KeyboardInterrupt:
+            print('\nConnection Closed by User')
         except Exception as e:
             print(f"Error sending/receiving data: {e}")
         finally:
@@ -43,7 +45,7 @@ if __name__ == "__main__":
     client = TCPClient(server_address, server_port)
 
     # Connect to the server
-    client.connect_to_server()
+    client.connect_to_server() 
 
     # Send and receive data in an infinite loop
     client.send_receive_data()

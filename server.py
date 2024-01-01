@@ -11,25 +11,26 @@ class ClientHandler(threading.Thread):
         self.client_socket = client_socket
         self.address = address
 
+
     def run(self):
         while True:
             try:
                 if self.clientName == None:
-                    self.client_socket.sendall("Enter your name: ".encode())
-                    data = self.client_socket.recv(1024).decode().strip()
+                    self.client_socket.sendall("Enter your name: ".encode())# اشفر
+                    data = self.client_socket.recv(1024).decode().strip() #فك 
                     if not data:
                         break
                     self.clientName = data
                     print(f"{self.clientName} Connected")
                     continue
                 
-                self.client_socket.sendall("1. Arrived flights\n2. Delayed flights\n3. All flights for a Country\n4. Details of Flight\nSelect an Option ('exit' to disconnect): ".encode())
+                self.client_socket.sendall("1. Arrived flights\n2. Delayed flights\n3. All flights for a Country\n4. Details of Flight\nSelect an Option ('Quit' to disconnect): ".encode())
                 
-                data = self.client_socket.recv(1024).decode().strip()
+                data = self.client_socket.recv(1024).decode().strip() ####3333333
                 if not data:
                     break
 
-                if not data.isdigit():
+                if not data.isdigit(): ###
                     continue
                 
                 option = int(data)
@@ -41,7 +42,7 @@ class ClientHandler(threading.Thread):
                     self.client_socket.sendall(flightsAPIManager.all_delayed().encode())
                 elif option == 3:
                     self.client_socket.sendall('Enter Airport ICAO Code: '.encode())
-                    code = self.client_socket.recv(1024).decode().strip()
+                    code = self.client_socket.recv(1024).decode().strip() ####
                     if not code:
                         break
 
