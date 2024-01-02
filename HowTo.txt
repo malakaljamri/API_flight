@@ -1,0 +1,19 @@
+* Start the server by running python server.py.
+* Enter the ICAO code (Ex , OBBI for Bahrain) to fetch flights.
+* Wait for the server to fetch flights for the entered ICAO code.
+* Once the server is listening, initiate client requests.
+* Enter your name in the command line (Ex, Malak), and it will be reflected on the server as 
+"Malak is connected." You can run up to 10 clients simultaneously.
+* The client displays information based on user queries :
+   * Option 1: Display all arrived flights -
+   * Option 2: Display all delayed flights -
+   * Option 3: Display all flights for a country (enter airport ICAO code) -
+   * Option 4: Request details of a specific flight (enter flight ICAO code) -
+   * Type 'Quit' to disconnect.
+* Clients can choose their desired request by entering the corresponding number:
+   * Type 1 to display all arrived flights.
+   * Type 2 for all delayed flights.
+   * Type 3 for all flights for a country (remember to enter the airport ICAO code).
+   * Type 4 for details of a specific flight (enter the flight ICAO code).
+* To close the connection and end the session, type 'Quit' or use Ctrl + C, 
+it will end the connection and display on the server that the client (Ex, Malak) has disconnected.
