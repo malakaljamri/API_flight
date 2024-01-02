@@ -28,6 +28,7 @@ class TCPClient:
 
                 if user_input.lower() == 'Quit':
                     break
+
         except KeyboardInterrupt:
             print('\nConnection Closed by User')
         except Exception as e:
